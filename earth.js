@@ -4,13 +4,13 @@ import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
 
 export async function earthCreate() {
   const mtlLoader = new MTLLoader();
-  let materials = await mtlLoader.loadAsync("models/planet.mtl");
+  let materials = await mtlLoader.loadAsync("./assets/planet.mtl");
   materials.side=THREE.DoubleSide
   materials.preload();
 
   const objLoader = new OBJLoader();
   objLoader.setMaterials(materials);
-  let obj = await objLoader.loadAsync("models/planet.obj");
+  let obj = await objLoader.loadAsync("./assets/planet.obj");
 
   return obj;
 }

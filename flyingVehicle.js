@@ -9,7 +9,7 @@ export async function flyingVehicleCreate() {
     metalness: 0.5, // Adjust metalness as needed
   });
 
-  let obj = await loader.loadAsync("models/plane.obj");
+  let obj = await loader.loadAsync("./assets/plane.obj");
   const flyingVehicle = obj;
   // Apply the red material to the flying vehicle
   flyingVehicle.traverse((child) => {

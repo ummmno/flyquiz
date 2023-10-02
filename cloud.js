@@ -9,7 +9,7 @@ export async function cloudCreate(ypos, model, color) {
     });
 
     const objLoader = new OBJLoader();
-    let object = await objLoader.loadAsync('models/'+ model + '.obj');
+    let object = await objLoader.loadAsync('./assets/'+ model + '.obj');
 
     object.traverse(child => {
         if (child instanceof THREE.Mesh) {

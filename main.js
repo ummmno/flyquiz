@@ -22,12 +22,12 @@ scene.add(rimLight);
 scene.background = new THREE.Color(0x9EE4E4);
 
 const mtlLoader = new MTLLoader();
-mtlLoader.load('models/planet.mtl', (materials) => {
+mtlLoader.load('./assets/planet.mtl', (materials) => {
     materials.preload();
 
     const objLoader = new OBJLoader();
     objLoader.setMaterials(materials);
-    objLoader.load('models/planet.obj', (object) => {
+    objLoader.load('./assets/planet.obj', (object) => {
         const ball = object;
         scene.add(ball);
 

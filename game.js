@@ -1,10 +1,11 @@
-import { randFloat } from "three/src/math/MathUtils";
+import * as THREE from "./node_modules/three"
 import { cloudCreate } from "./cloud";
 import { earthCreate } from "./earth";
 import { flyingVehicleCreate } from "./flyingVehicle";
-import * as THREE from "three"
-import { QuestionsLength, getQuestion } from "./axioshandler";
+//import { QuestionsLength, getQuestion, sendRequest } from "./questionApi";
 
+
+async function main(){
 let gameSpeed = 0.5;
 
 const scene = new THREE.Scene();
@@ -35,7 +36,7 @@ scene.background = new THREE.Color(0x9EE4E4);
 const listener = new THREE.AudioListener();
 const audioLoader = new THREE.AudioLoader();
 const ambientMusic = new THREE.Audio(listener);
-audioLoader.load('bcg_music.mp3', function(buffer) {
+audioLoader.load('./assets/bcg_music.mp3', function(buffer) {
   ambientMusic.setBuffer(buffer);
   ambientMusic.setLoop(true);
   ambientMusic.setVolume(0.5);
@@ -110,42 +111,87 @@ let score = 0;
 
 let questionObj = null;
 
+let earthRotation = 0.001;
 
-let questionsLength = 10;
-QuestionsLength().then((re) => {
-  questionsLength = re;
-});
+let questions = undefined;
+let questionsLength = 50;
+let question = "";
+let correct = "";
+let incorrect1 = "";
+let incorrect2 = "";
+let shuffledQuestion = "";
+let correctIndex = "";
 
+// get questions and handle them
+function sendRequest(){
+  const xhr = new XMLHttpRequest();
+  const apiUrl = "https://opentdb.com/api.php?amount=50&difficulty=medium&type=multiple";
+  xhr.open('GET', apiUrl, true);
+  xhr.onload = function () {
+    if (xhr.status >= 200 && xhr.status < 400) {
+      const data = JSON.parse(xhr.responseText);
+      questions = data.results
+      questionsLength = questions.length
+    } else {
+      console.error('Error:', xhr.status);
+    }
+  };
+
+  xhr.onerror = function () {
+    console.error('Error:', xhr.status);
+  };
+
+  xhr.send();
+}
+
+sendRequest();
+
+function shuffleWithIndex(arr) {
+  const shuffledArray = [...arr].sort(() => Math.random() - 0.5);
+  const originalIndex = shuffledArray.indexOf(arr[0]);
+  return [shuffledArray, originalIndex];
+} 
+
+// handle the next question
 function nextQuestion(){
   resetClouds()
   questionNum += 1;
   if(questionNum == questionsLength){
     questionNum = 0;
+    sendRequest();
   }
+  question = questions[questionNum].question
 
-  getQuestion(questionNum).then((re) => {
-    // set the correct answer
-    questionObj = re;
-    // get next question
-    document.getElementById("question").innerHTML = re[0];
-    document.getElementById("a1").innerHTML = "A: " + re[1][0];
-    document.getElementById("a2").innerHTML = "B: " + re[1][1];
-    document.getElementById("a3").innerHTML = "C: " + re[1][2];
-    // text back to black
-    document.getElementById("question").style.color = "black";
-    document.getElementById("question").style.fontSize = "3em"; 
-    document.getElementById("a1").style.color = "#456A80";
-    document.getElementById("a2").style.color = "#82824E";
-    document.getElementById("a3").style.color = "#4E824E";
+  correct = questions[questionNum].correct_answer
+  incorrect1 = questions[questionNum].incorrect_answers[0]
+  incorrect2 = questions[questionNum].incorrect_answers[1]
 
-    console.log("Question number: "+ questionNum)
+  const [shuffledQuestion, correctIndex] = shuffleWithIndex([correct, incorrect1, incorrect2]);
 
-    answered = false;
-  })
+  console.log([correct, incorrect1, incorrect2])
+  console.log(shuffledQuestion)
+
+  // get next question
+  document.getElementById("question").innerHTML = question;
+  document.getElementById("a1").innerHTML = "A: " + shuffledQuestion[0];
+  document.getElementById("a2").innerHTML = "B: " + shuffledQuestion[1];
+  document.getElementById("a3").innerHTML = "C: " + shuffledQuestion[2];
+  // text back to black
+  document.getElementById("question").style.color = "black";
+  document.getElementById("question").style.fontSize = "3em"; 
+  document.getElementById("a1").style.color = "#456A80";
+  document.getElementById("a2").style.color = "#82824E";
+  document.getElementById("a3").style.color = "#4E824E";
+
+  console.log("Question number: "+ questionNum)
+
+  answered = false;
 }
 
 function showCorrect(){
-  if(cloudPicked == (questionObj[2] + 1)){
+  console.log("picked = " + cloudPicked)
+  console.log("correct = " + correctIndex + 1)
+  if(cloudPicked == (correctIndex + 1)){
     // correct
     document.getElementById("question").innerHTML = "Correct!";
     document.getElementById("question").style.color = "green";
@@ -153,14 +199,16 @@ function showCorrect(){
     document.getElementById("score").innerHTML = "Score: " + score;
   } else {
     // incorrect
-    document.getElementById("question").innerHTML = "Incorrectr ):";
+    document.getElementById("question").innerHTML = "Incorrect..";
     document.getElementById("question").style.color = "red";
     score = 0;
     document.getElementById("score").innerHTML = "Score: " + score;
   }
-  document.getElementById("a"+ (questionObj[2] + 1)).style.color = "green";
-  // document.getElementById("a"+ (re.bad[0] + 1)).style.color = "red";
-  // document.getElementById("a"+ (re.bad[1] + 1)).style.color = "red";
+  const unusedIndexes = [0, 1, 2].filter(index => index !== correctIndex);
+  // TODO here
+  document.getElementById("a"+ (correctIndex + 1)).style.color = "green";
+  document.getElementById("a"+ (unusedIndexes[0] + 1)).style.color = "red";
+  document.getElementById("a"+ (unusedIndexes[1] + 1)).style.color = "red";
 }
 
 function answerHandler(answer){
@@ -330,7 +378,11 @@ function animate() {
     document.getElementById("a3").style.display = "block";
     document.getElementById("score").style.display = "block";
     // earth
-    earth.rotation.y -= 0.003 * gameSpeed;
+
+    if(earthRotation < 0.0029){
+      earthRotation += 0.00001;
+    }
+    earth.rotation.y -= earthRotation * gameSpeed;
     propellerMesh.rotation.x += 0.4 * gameSpeed;
 
     planeAnimation()
@@ -413,7 +465,7 @@ function animate() {
     document.getElementById("a3").style.display = "none"
     document.getElementById("score").style.display = "none"
 
-    earth.rotation.y -= 0.001 * gameSpeed;
+    earth.rotation.y -= earthRotation * gameSpeed;
     propellerMesh.rotation.x += 0.2 * gameSpeed;
 
     cloudStart.position.set(movs, 0, 0.8);
@@ -470,4 +522,7 @@ animate();
 
 camera.position.z = 0.7; // 0.7
 camera.position.y = -0.5;
-camera.rotation.x = 90
+camera.rotation.x = 90;
+}
+
+main()
