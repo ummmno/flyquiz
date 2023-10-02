@@ -113,50 +113,38 @@ let questionObj = null;
 
 let earthRotation = 0.001;
 
-let questions = undefined;
+let questions = [];
 let questionsLength = 50;
 let question = "";
 let correct = "";
 let incorrect1 = "";
 let incorrect2 = "";
-let shuffledQuestion = "";
 let correctIndex = "";
 
 // get questions and handle them
-function sendRequest(){
-  const xhr = new XMLHttpRequest();
-  const apiUrl = "https://opentdb.com/api.php?amount=50&difficulty=medium&type=multiple";
-  xhr.open('GET', apiUrl, true);
-  xhr.onload = function () {
-    if (xhr.status >= 200 && xhr.status < 400) {
-      const data = JSON.parse(xhr.responseText);
-      questions = data.results
-      questionsLength = questions.length
-    } else {
-      console.error('Error:', xhr.status);
-    }
-  };
-
-  xhr.onerror = function () {
-    console.error('Error:', xhr.status);
-  };
-
-  xhr.send();
+async function sendRequest(diff) {
+  const response = await fetch(`https://opentdb.com/api.php?amount=50&difficulty=${diff}&type=multiple`);
+  console.log("Fetched diff: " +  diff)
+  const questions = await response.json();
+  return questions.results;
 }
 
-sendRequest();
+const shuffleArray = arr => arr.sort(() => Math.random() - 0.5);
 
-function shuffleWithIndex(arr) {
-  const shuffledArray = [...arr].sort(() => Math.random() - 0.5);
-  const originalIndex = shuffledArray.indexOf(arr[0]);
-  return [shuffledArray, originalIndex];
-} 
+let q1 = await sendRequest("easy")
+let q2 = await sendRequest("medium")
+let q3 = await sendRequest("hard")
+questions.push(...q1, ...q2, ...q3)
+
+questions = shuffleArray(questions)
+
+questionsLength = questions.length
 
 // handle the next question
 function nextQuestion(){
   resetClouds()
   questionNum += 1;
-  if(questionNum == questionsLength){
+  if(questionNum == questionsLength - 1){
     questionNum = 0;
     sendRequest();
   }
@@ -166,31 +154,33 @@ function nextQuestion(){
   incorrect1 = questions[questionNum].incorrect_answers[0]
   incorrect2 = questions[questionNum].incorrect_answers[1]
 
-  const [shuffledQuestion, correctIndex] = shuffleWithIndex([correct, incorrect1, incorrect2]);
+  const shuffled = shuffleArray([[correct, true], [incorrect1, false], [incorrect2, false]]);
 
-  console.log([correct, incorrect1, incorrect2])
-  console.log(shuffledQuestion)
+  for (let i = 0; i < shuffled.length; i++) {
+    if(shuffled[i][1]){
+      correctIndex = i;
+    }
+  }
 
   // get next question
   document.getElementById("question").innerHTML = question;
-  document.getElementById("a1").innerHTML = "A: " + shuffledQuestion[0];
-  document.getElementById("a2").innerHTML = "B: " + shuffledQuestion[1];
-  document.getElementById("a3").innerHTML = "C: " + shuffledQuestion[2];
+  document.getElementById("a1").innerHTML = "A: " + shuffled[0][0];
+  document.getElementById("a2").innerHTML = "B: " + shuffled[1][0];
+  document.getElementById("a3").innerHTML = "C: " + shuffled[2][0];
   // text back to black
   document.getElementById("question").style.color = "black";
   document.getElementById("question").style.fontSize = "3em"; 
   document.getElementById("a1").style.color = "#456A80";
   document.getElementById("a2").style.color = "#82824E";
   document.getElementById("a3").style.color = "#4E824E";
-
-  console.log("Question number: "+ questionNum)
+  document.getElementById("a1").style.opacity = '1';
+  document.getElementById("a2").style.opacity = '1';
+  document.getElementById("a3").style.opacity = '1';
 
   answered = false;
 }
 
 function showCorrect(){
-  console.log("picked = " + cloudPicked)
-  console.log("correct = " + correctIndex + 1)
   if(cloudPicked == (correctIndex + 1)){
     // correct
     document.getElementById("question").innerHTML = "Correct!";
@@ -201,14 +191,16 @@ function showCorrect(){
     // incorrect
     document.getElementById("question").innerHTML = "Incorrect..";
     document.getElementById("question").style.color = "red";
-    score = 0;
+    //score = 0;
     document.getElementById("score").innerHTML = "Score: " + score;
   }
   const unusedIndexes = [0, 1, 2].filter(index => index !== correctIndex);
-  // TODO here
+  
   document.getElementById("a"+ (correctIndex + 1)).style.color = "green";
   document.getElementById("a"+ (unusedIndexes[0] + 1)).style.color = "red";
   document.getElementById("a"+ (unusedIndexes[1] + 1)).style.color = "red";
+  document.getElementById("a"+ (unusedIndexes[0] + 1)).style.opacity = '0.4';
+  document.getElementById("a"+ (unusedIndexes[1] + 1)).style.opacity = '0.4';
 }
 
 function answerHandler(answer){
@@ -242,7 +234,7 @@ function answerHandler(answer){
 // }
 
 function planeAnimation(){
-  if(0.7 < (mouseY*0.5 + 1) && (mouseY*0.6 + 1) < 1.57){
+  if(0.7 < (mouseY*0.5 + 1) && (mouseY*0.6 + 1) < 1.5){
     mouseposraw = mouseY*0.6 + 1;
   }
   mousepos += 0.25*(mouseposraw - mousepos)
@@ -474,7 +466,7 @@ function animate() {
       movs -= 0.005 * gameSpeed * cloudSpeed;
     }
 
-    if(0.7 < (mouseY*0.5 + 1) && (mouseY*0.6 + 1) < 1.57){
+    if(0.7 < (mouseY*0.5 + 1) && (mouseY*0.6 + 1) < 1.5){
       mouseposraw = mouseY*0.6 + 1;
     }
     mousepos += 0.13*(mouseposraw - mousepos)
