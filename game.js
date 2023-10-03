@@ -4,6 +4,10 @@ import { earthCreate } from "./earth";
 import { flyingVehicleCreate } from "./flyingVehicle";
 //import { QuestionsLength, getQuestion, sendRequest } from "./questionApi";
 
+// Assuming you have a preloader element with an id of "preloader"
+const preloader = document.getElementById('preloader');
+const mainpage = document.getElementById('main');
+mainpage.style.display = 'none';
 
 async function main(){
 let gameSpeed = 0.5;
@@ -13,7 +17,7 @@ const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerH
 
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
+mainpage.appendChild(renderer.domElement);
 
 renderer.shadowMap.enabled = true;
 
@@ -362,6 +366,8 @@ function resetClouds(){
 }
 
 function animate() {
+  preloader.style.display = 'none';
+  mainpage.style.display = 'block';
   requestAnimationFrame(animate);
   if(gameStart){
     // turn on answer things
