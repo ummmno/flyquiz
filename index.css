@@ -1,6 +1,7 @@
 * {
   font-family: 'Inter', sans-serif;
   font-family: 'Quicksand', sans-serif;
+	user-select: none;
 }
 body,html{
   height: 100%;
