@@ -365,6 +365,11 @@ function resetClouds(){
   cloud3.visible = true;
 }
 
+if(((window.innerWidth > 0) ? window.innerWidth : screen.width) < 1000){
+  flyingVehicle.position.x = 0;
+  console.log("Smaller device - plane moved to the middle")
+}
+
 function animate() {
   preloader.style.display = 'none';
   mainpage.style.display = 'block';
